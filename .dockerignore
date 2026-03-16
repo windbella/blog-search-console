@@ -1,0 +1,9 @@
+node_modules
+dist
+data/blog.db
+data/blog.db-wal
+data/blog.db-shm
+.claude
+.idea
+.git
+.DS_Store
