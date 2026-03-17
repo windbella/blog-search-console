@@ -1,4 +1,7 @@
 node_modules/
 dist/
-data/blog.db
+data/
 .DS_Store
+.idea/
+.playwright-mcp/
+.claude/settings.local.json
