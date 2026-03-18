@@ -4,11 +4,24 @@ import { CategoryFilterContainer } from '../widgets/category-filter/CategoryFilt
 import { PostListContainer } from '../widgets/post-list/PostListContainer'
 import { Pagination } from '../widgets/pagination/Pagination'
 import { usePostStore } from '../shared/model/postStore'
+import { usePageMeta } from '../shared/lib/usePageMeta'
+import { useBlogName } from '../shared/lib/useBlogName'
 
 export function BlogPage() {
   const { blogId, page } = useParams()
   const currentPage = Number(page ?? '1')
   const totalPages = usePostStore((s) => s.totalPages)
+  const blogName = useBlogName(blogId ?? '')
+  const posts = usePostStore((s) => s.posts)
+
+  const firstTitle = posts.length > 0 ? posts[0].title.slice(0, 30) : ''
+  const title = firstTitle
+    ? `${firstTitle} - ${blogName}${currentPage > 1 ? ` (페이지 ${currentPage})` : ''}`
+    : `${blogName} | nlink${currentPage > 1 ? ` (페이지 ${currentPage})` : ''}`
+  const description = posts.length > 0
+    ? posts[0].summary.slice(0, 150)
+    : `${blogName}의 블로그 글 모아보기`
+  usePageMeta(title, description)
 
   if (!blogId) return null
 

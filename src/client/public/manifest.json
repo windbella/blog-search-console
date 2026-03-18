@@ -1,6 +1,6 @@
 {
-  "name": "블로그 포스트 모음",
-  "short_name": "블로그 모음",
+  "name": "nlink",
+  "short_name": "nlink",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

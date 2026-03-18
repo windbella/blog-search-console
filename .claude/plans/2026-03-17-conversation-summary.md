@@ -1,4 +1,4 @@
-# 대화 요약 (2026-03-16 ~ 03-17)
+# 대화 요약 (2026-03-16 ~ 03-18)
 
 ## 프로젝트 개요
 
@@ -18,7 +18,7 @@
 - arpia-calendar 프로젝트 구조 참고 (client/server/poller 3-프로세스)
 - 멀티블로그 지원 (`blogs` 테이블, 블로그 추가는 DB INSERT만으로 가능)
 - RESTful 페이지네이션 (`/blog/:blogId/:page`) — SEO에 유리
-- 페이지당 20개 포스트로 분할 (링크 과다 방지)
+- 페이지당 10개 포스트로 통일
 - 문서: `.claude/docs/` 에 architecture, shared, poller, server, client 문서 작성
 
 ### 3. 구현 (완료)
@@ -37,11 +37,23 @@
 ### 5. 배포 (완료)
 - 도메인: `nlink.windbell.co.kr`
 - Docker 이미지: `registry.windbell.co.kr/nlink:latest`
-- 네이버 이미지 프록시 (`/api/image`) — HTTP only 이미지를 HTTPS 사이트에서 로딩
+- 네이버 이미지 프록시 (`/api/image`) — HTTP only 프로필 이미지를 HTTPS 사이트에서 로딩 (포스트 썸네일은 HTTPS 지원되므로 프록시 불필요)
 - 사이트맵: `/sitemap.xml` → `/api/sitemap.xml` 연결, HTTPS URL 강제
 - Google Search Console 등록 및 사이트맵 제출 완료
 
-### 6. 등록 블로그
+### 6. SEO 개선 (완료)
+- **카테고리별 페이지 추가**: `/blog/:blogId/:category/:page` (10개씩)
+- **동적 메타 주입 (서버)**: 경로별 고유 title, description, canonical, OG 태그, JSON-LD
+- **동적 메타 주입 (프론트)**: usePageMeta 훅으로 SPA 이동 시에도 title, description 변경
+- **JSON-LD 구조화 데이터**: 홈은 WebSite, 블로그/카테고리 페이지는 CollectionPage
+- **카테고리 필터를 Link 태그로 변경**: 구글봇이 크롤링 가능
+- **noscript에 요약 텍스트 포함**: 구글봇 1차 크롤링에서 콘텐츠 인식
+- **title에 첫 글 제목 포함**: 페이지별 고유하고 의미있는 title (30자 제한)
+- **사이트맵에 카테고리 페이지 URL 추가**
+- **텍스트 개선**: "블로그 포스트 모음" → "nlink - 맛집, 리뷰, 일상을 기록하는 공간"
+- **Google Analytics (GA4)**: G-GWVDFVN12T 적용
+
+### 7. 등록 블로그
 | blogId | 블로그명 | 포스트 수 |
 |--------|---------|----------|
 | ai-windbell | 인간지능 바람종 | 65 (RSS 50 + seed 15) |
@@ -50,21 +62,7 @@
 
 ---
 
-## 다음 단계 (미착수)
-
-### 개별 포스트 페이지 추가
-- `/blog/:blogId/post/:logNo` 경로로 포스트별 단독 페이지
-- 포스트별 고유 title, description, canonical, OG 태그
-- 구조화 데이터 (Article JSON-LD)
-- 목록에서 20개 링크 나열하는 것보다 개별 페이지가 SEO에 더 자연스러움
-- thin content 리스크 있지만 요약+태그+카테고리로 최소 콘텐츠 확보
-
-### SEO 품질 개선 (1~3번)
-1. **구조화 데이터 (JSON-LD)** — WebSite, Article 마크업
-2. **동적 meta/title** — 서버에서 index.html 서빙 시 경로별로 title, description 동적 주입
-3. **canonical 태그** — 각 페이지마다 고유 canonical URL
-
-### 기대 타임라인
+## 기대 타임라인
 - 1~3일: nlink 사이트 자체 크롤링/색인 시작
 - 1~2주: 사이트맵 하위 페이지 크롤링
 - 2~3주: 외부 링크(m.blog.naver.com) 따라가기 시작

@@ -43,14 +43,14 @@ if (isProduction && existsSync(clientDir)) {
 
     // SEO 메타 태그 동적 주입
     const meta = buildMeta(req.path, siteUrl);
-    html = html.replace("<title>블로그 포스트 모음</title>", `<title>${meta.title}</title>`);
+    html = html.replace(/<title>[^<]*<\/title>/, `<title>${meta.title}</title>`);
     html = html.replace(
-      'content="네이버 블로그 포스트 모음"',
-      `content="${escapeAttr(meta.description)}"`,
+      /(<meta name="description" content=")[^"]*(")/,
+      `$1${escapeAttr(meta.description)}$2`,
     );
     html = html.replace(
-      'content="블로그 포스트 모음"',
-      `content="${escapeAttr(meta.ogTitle)}"`,
+      /(<meta property="og:title" content=")[^"]*(")/,
+      `$1${escapeAttr(meta.ogTitle)}$2`,
     );
 
     // canonical + og:description + JSON-LD 삽입
@@ -87,15 +87,15 @@ interface MetaInfo {
 
 function buildMeta(path: string, siteUrl: string): MetaInfo {
   const defaults: MetaInfo = {
-    title: "블로그 포스트 모음",
-    description: "네이버 블로그 포스트 모음",
+    title: "nlink",
+    description: "네이버 nlink",
     canonical: `${siteUrl}/`,
-    ogTitle: "블로그 포스트 모음",
-    ogDescription: "네이버 블로그 포스트 모음",
+    ogTitle: "nlink",
+    ogDescription: "네이버 nlink",
     jsonLd: {
       "@context": "https://schema.org",
       "@type": "WebSite",
-      name: "블로그 포스트 모음",
+      name: "nlink",
       url: siteUrl,
     },
   };
@@ -146,12 +146,18 @@ function buildMeta(path: string, siteUrl: string): MetaInfo {
 function buildBlogMeta(blogId: string, page: number, siteUrl: string): MetaInfo {
   const blog = getBlog(blogId);
   const blogName = blog?.name ?? blogId;
-  const blogDesc = blog?.description ?? "";
 
-  let title = `${blogName} - 블로그 포스트 모음`;
+  const posts = getPostList(blogId, page, 1);
+  const firstTitle = posts.length > 0 ? posts[0].title.slice(0, 30) : "";
+
+  let title = firstTitle
+    ? `${firstTitle} - ${blogName}`
+    : `${blogName} - nlink`;
   if (page > 1) title += ` (페이지 ${page})`;
 
-  const description = blogDesc || `${blogName}의 블로그 포스트 목록`;
+  const description = posts.length > 0 && posts[0].summary
+    ? posts[0].summary.slice(0, 160)
+    : `${blogName}의 블로그 글 모아보기`;
   const canonical = page === 1 ? `${siteUrl}/blog/${blogId}` : `${siteUrl}/blog/${blogId}/${page}`;
 
   return {
@@ -174,14 +180,17 @@ function buildCategoryMeta(blogId: string, category: string, page: number, siteU
   const blog = getBlog(blogId);
   const blogName = blog?.name ?? blogId;
 
-  let title = `${category} - ${blogName}`;
+  const posts = getPostList(blogId, page, 1, category);
+  const firstTitle = posts.length > 0 ? posts[0].title.slice(0, 30) : "";
+
+  let title = firstTitle
+    ? `${firstTitle} - ${category} | ${blogName}`
+    : `${category} - ${blogName}`;
   if (page > 1) title += ` (페이지 ${page})`;
 
-  // 해당 카테고리 첫 포스트의 요약을 description으로 사용
-  const posts = getPostList(blogId, 1, 1, category);
   const description = posts.length > 0 && posts[0].summary
     ? posts[0].summary.slice(0, 160)
-    : `${blogName}의 ${category} 카테고리 포스트 목록`;
+    : `${blogName}의 ${category} 카테고리 글 모아보기`;
 
   const encodedCat = encodeURIComponent(category);
   const canonical = page === 1
@@ -253,6 +262,10 @@ ${items}
   return null;
 }
 
+function escapeHtml(str: string): string {
+  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
 function buildBlogNoscript(blogId: string, page: number): string | null {
   const posts = getPostList(blogId, page, PAGE_SIZE);
   const total = getPostCount(blogId);
@@ -261,7 +274,7 @@ function buildBlogNoscript(blogId: string, page: number): string | null {
   if (posts.length === 0) return null;
 
   const postItems = posts
-    .map((p) => `      <li><a href="https://m.blog.naver.com/${blogId}/${p.logNo}">${p.title}</a></li>`)
+    .map((p) => `      <li><a href="https://m.blog.naver.com/${blogId}/${p.logNo}">${escapeHtml(p.title)}</a><p>${escapeHtml(p.summary.slice(0, 150))}</p></li>`)
     .join("\n");
 
   // 카테고리 링크 추가
@@ -294,7 +307,7 @@ function buildCategoryNoscript(blogId: string, category: string, page: number): 
   if (posts.length === 0) return null;
 
   const postItems = posts
-    .map((p) => `      <li><a href="https://m.blog.naver.com/${blogId}/${p.logNo}">${p.title}</a></li>`)
+    .map((p) => `      <li><a href="https://m.blog.naver.com/${blogId}/${p.logNo}">${escapeHtml(p.title)}</a><p>${escapeHtml(p.summary.slice(0, 150))}</p></li>`)
     .join("\n");
 
   const encodedCat = encodeURIComponent(category);
