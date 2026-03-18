@@ -62,6 +62,16 @@ export function upsertPosts(posts: Omit<Post, "createdAt">[]): void {
 
 // ── SELECT ──
 
+export function getBlog(blogId: string): Blog | undefined {
+  const db = getDb();
+  const row = db
+    .prepare("SELECT * FROM blogs WHERE blogId = ? AND active = 1")
+    .get(blogId) as (Omit<Blog, "active"> & { active: number }) | undefined;
+
+  if (!row) return undefined;
+  return { ...row, active: row.active === 1 };
+}
+
 export function getBlogs(): Blog[] {
   const db = getDb();
   const rows = db

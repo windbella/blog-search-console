@@ -1,3 +1,5 @@
+import { Link } from 'react-router'
+
 interface CategoryItem {
   name: string
   count: number
@@ -6,35 +8,31 @@ interface CategoryItem {
 interface Props {
   categories: CategoryItem[]
   selected: string | null
-  onSelect: (category: string | null) => void
+  blogId: string
 }
 
-export function CategoryFilter({ categories, selected, onSelect }: Props) {
+export function CategoryFilter({ categories, selected, blogId }: Props) {
+  const baseClass = 'px-3 py-1.5 text-sm rounded-full border transition-colors inline-block'
+  const activeClass = 'bg-indigo-600 text-white border-indigo-600'
+  const inactiveClass = 'bg-white text-gray-700 border-gray-300 hover:border-indigo-300 hover:text-indigo-600'
+
   return (
     <div className="flex flex-wrap gap-2 mb-6">
-      <button
-        onClick={() => onSelect(null)}
-        className={`px-3 py-1.5 text-sm rounded-full border transition-colors ${
-          selected === null
-            ? 'bg-indigo-600 text-white border-indigo-600'
-            : 'bg-white text-gray-700 border-gray-300 hover:border-indigo-300 hover:text-indigo-600'
-        }`}
+      <Link
+        to={`/blog/${blogId}`}
+        className={`${baseClass} ${selected === null ? activeClass : inactiveClass}`}
       >
         전체
-      </button>
+      </Link>
       {categories.map((cat) => (
-        <button
+        <Link
           key={cat.name}
-          onClick={() => onSelect(cat.name)}
-          className={`px-3 py-1.5 text-sm rounded-full border transition-colors ${
-            selected === cat.name
-              ? 'bg-indigo-600 text-white border-indigo-600'
-              : 'bg-white text-gray-700 border-gray-300 hover:border-indigo-300 hover:text-indigo-600'
-          }`}
+          to={`/blog/${blogId}/${encodeURIComponent(cat.name)}`}
+          className={`${baseClass} ${selected === cat.name ? activeClass : inactiveClass}`}
         >
           {cat.name}
           <span className="ml-1 text-xs opacity-70">({cat.count})</span>
-        </button>
+        </Link>
       ))}
     </div>
   )

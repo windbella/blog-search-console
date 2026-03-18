@@ -5,9 +5,14 @@ interface Props {
   currentPage: number
   totalPages: number
   blogId: string
+  category?: string
 }
 
-function pageUrl(blogId: string, page: number): string {
+function pageUrl(blogId: string, page: number, category?: string): string {
+  if (category) {
+    const encoded = encodeURIComponent(category)
+    return page === 1 ? `/blog/${blogId}/${encoded}` : `/blog/${blogId}/${encoded}/${page}`
+  }
   return page === 1 ? `/blog/${blogId}` : `/blog/${blogId}/${page}`
 }
 
@@ -22,7 +27,7 @@ function getPageRange(current: number, total: number): number[] {
   return pages
 }
 
-export function Pagination({ currentPage, totalPages, blogId }: Props) {
+export function Pagination({ currentPage, totalPages, blogId, category }: Props) {
   const pages = getPageRange(currentPage, totalPages)
 
   const baseClass =
@@ -35,7 +40,7 @@ export function Pagination({ currentPage, totalPages, blogId }: Props) {
   return (
     <nav className="flex justify-center items-center gap-1.5 mt-10" aria-label="페이지 네비게이션">
       {currentPage > 1 ? (
-        <Link to={pageUrl(blogId, currentPage - 1)} className={`${baseClass} ${inactiveClass}`} aria-label="이전 페이지">
+        <Link to={pageUrl(blogId, currentPage - 1, category)} className={`${baseClass} ${inactiveClass}`} aria-label="이전 페이지">
           <ChevronLeft className="w-4 h-4" />
         </Link>
       ) : (
@@ -46,7 +51,7 @@ export function Pagination({ currentPage, totalPages, blogId }: Props) {
 
       {pages[0] > 1 && (
         <>
-          <Link to={pageUrl(blogId, 1)} className={`${baseClass} ${inactiveClass}`}>
+          <Link to={pageUrl(blogId, 1, category)} className={`${baseClass} ${inactiveClass}`}>
             1
           </Link>
           {pages[0] > 2 && <span className="px-1 text-gray-400">...</span>}
@@ -56,7 +61,7 @@ export function Pagination({ currentPage, totalPages, blogId }: Props) {
       {pages.map((p) => (
         <Link
           key={p}
-          to={pageUrl(blogId, p)}
+          to={pageUrl(blogId, p, category)}
           className={`${baseClass} ${p === currentPage ? activeClass : inactiveClass}`}
           aria-current={p === currentPage ? 'page' : undefined}
         >
@@ -69,14 +74,14 @@ export function Pagination({ currentPage, totalPages, blogId }: Props) {
           {pages[pages.length - 1] < totalPages - 1 && (
             <span className="px-1 text-gray-400">...</span>
           )}
-          <Link to={pageUrl(blogId, totalPages)} className={`${baseClass} ${inactiveClass}`}>
+          <Link to={pageUrl(blogId, totalPages, category)} className={`${baseClass} ${inactiveClass}`}>
             {totalPages}
           </Link>
         </>
       )}
 
       {currentPage < totalPages ? (
-        <Link to={pageUrl(blogId, currentPage + 1)} className={`${baseClass} ${inactiveClass}`} aria-label="다음 페이지">
+        <Link to={pageUrl(blogId, currentPage + 1, category)} className={`${baseClass} ${inactiveClass}`} aria-label="다음 페이지">
           <ChevronRight className="w-4 h-4" />
         </Link>
       ) : (

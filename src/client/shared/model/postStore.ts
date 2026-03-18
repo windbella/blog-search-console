@@ -11,7 +11,7 @@ interface PostStore {
   category: string | null
   loading: boolean
 
-  fetchPosts: (blogId: string, page: number) => Promise<void>
+  fetchPosts: (blogId: string, page: number, category?: string, pageSize?: number) => Promise<void>
   setCategory: (category: string | null) => void
 }
 
@@ -24,12 +24,11 @@ export const usePostStore = create<PostStore>((set, get) => ({
   category: null,
   loading: false,
 
-  fetchPosts: async (blogId: string, page: number) => {
-    const { category } = get()
-    set({ loading: true, blogId, page })
+  fetchPosts: async (blogId: string, page: number, category?: string, pageSize?: number) => {
+    set({ loading: true, blogId, page, category: category ?? null })
 
     try {
-      const data = await getPosts(blogId, page, category ?? undefined)
+      const data = await getPosts(blogId, page, category, pageSize)
       set({
         posts: data.posts,
         total: data.total,
@@ -46,7 +45,7 @@ export const usePostStore = create<PostStore>((set, get) => ({
     const { blogId } = get()
     set({ category })
     if (blogId) {
-      get().fetchPosts(blogId, 1)
+      get().fetchPosts(blogId, 1, category ?? undefined)
     }
   },
 }))

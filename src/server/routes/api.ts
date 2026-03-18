@@ -1,7 +1,7 @@
 import { Router } from "express";
 import type { Request, Response } from "express";
 import { getBlogs, getPostList, getPostCount, getCategories, getAllPostCounts } from "../../shared/db/queries.js";
-import { PAGE_SIZE } from "../../shared/constants.js";
+import { PAGE_SIZE, CATEGORY_PAGE_SIZE } from "../../shared/constants.js";
 
 const router = Router();
 
@@ -22,12 +22,13 @@ const postsHandler = (req: Request, res: Response) => {
   const blogId = req.params.blogId as string;
   const page = Math.max(1, parseInt((req.params.page as string) ?? "1", 10) || 1);
   const category = (req.query.category as string) || undefined;
+  const pageSize = req.query.pageSize ? Math.min(100, Math.max(1, parseInt(req.query.pageSize as string, 10) || PAGE_SIZE)) : PAGE_SIZE;
 
-  const posts = getPostList(blogId, page, PAGE_SIZE, category);
+  const posts = getPostList(blogId, page, pageSize, category);
   const total = getPostCount(blogId, category);
-  const totalPages = Math.ceil(total / PAGE_SIZE);
+  const totalPages = Math.ceil(total / pageSize);
 
-  res.json({ posts, total, page, totalPages, pageSize: PAGE_SIZE });
+  res.json({ posts, total, page, totalPages, pageSize });
 };
 router.get("/posts/:blogId", postsHandler);
 router.get("/posts/:blogId/:page", postsHandler);
@@ -61,6 +62,21 @@ router.get("/sitemap.xml", (req: Request, res: Response) => {
     // 2페이지 이상
     for (let p = 2; p <= totalPages; p++) {
       urls.push(`  <url><loc>${siteUrl}/blog/${blog.blogId}/${p}</loc></url>`);
+    }
+
+    // 카테고리별 페이지
+    const categories = getCategories(blog.blogId);
+    for (const cat of categories) {
+      const catTotalPages = Math.max(1, Math.ceil(cat.count / CATEGORY_PAGE_SIZE));
+      const encodedCat = encodeURIComponent(cat.name);
+
+      // 카테고리 1페이지
+      urls.push(`  <url><loc>${siteUrl}/blog/${blog.blogId}/${encodedCat}</loc></url>`);
+
+      // 2페이지 이상
+      for (let p = 2; p <= catTotalPages; p++) {
+        urls.push(`  <url><loc>${siteUrl}/blog/${blog.blogId}/${encodedCat}/${p}</loc></url>`);
+      }
     }
   }
 

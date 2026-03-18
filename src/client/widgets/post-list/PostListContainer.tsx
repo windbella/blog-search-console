@@ -5,14 +5,16 @@ import { PostList } from './PostList'
 interface Props {
   blogId: string
   page: number
+  category?: string
+  pageSize?: number
 }
 
-export function PostListContainer({ blogId, page }: Props) {
-  const { posts, loading, fetchPosts, category } = usePostStore()
+export function PostListContainer({ blogId, page, category, pageSize }: Props) {
+  const { posts, loading, fetchPosts } = usePostStore()
 
   useEffect(() => {
-    fetchPosts(blogId, page)
-  }, [blogId, page, category, fetchPosts])
+    fetchPosts(blogId, page, category, pageSize)
+  }, [blogId, page, category, pageSize, fetchPosts])
 
   if (loading) {
     return (
