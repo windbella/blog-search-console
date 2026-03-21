@@ -4,9 +4,10 @@
 tistory.com(DA 높음)에서 `m.blog.naver.com` 링크를 제공하여 구글봇이 네이버 블로그를 발견하게 유도.
 
 ## 파일 규칙
-- 파일명: `{번호}-{카테고리}-{순번}.md` (예: `01-맛집-1.md`)
+- 파일명: `{카테고리}-{순번}.md` (예: `맛집-1.md`)
 - 한 파일당 포스트 링크 10개 이내
-- 10개 초과 시 순번 올려서 새 파일 (예: `01-맛집-5.md`)
+- **맛집(먹은 것들)**: 시간순으로 10개씩 채우고, 10개 차면 그때 글들 보고 제목 확정. 순번 올려서 새 파일 생성
+- 기타 카테고리: 해당 카테고리 파일에 추가, 10개 초과 시 순번 올려서 새 파일
 
 ## 글 작성 규칙
 - 제목: `# 자연스러운 제목`
@@ -20,11 +21,11 @@ tistory.com(DA 높음)에서 `m.blog.naver.com` 링크를 제공하여 구글봇
 3. 티스토리 글 수정 반영
 
 ## 카테고리 매핑
-| 파일 번호 | 네이버 카테고리 | 티스토리 대상 |
-|----------|---------------|-------------|
-| 01~04 | 먹은 것들 | steambell.tistory.com |
-| 05 | 본 것들 | steambell.tistory.com |
-| 06 | 산 것들 | steambell.tistory.com |
-| 07 | 굴리는 것들 | steambell.tistory.com |
-| 08 | 부르는 것들 | steambell.tistory.com |
-| 09 | 키우는 것들 | steambell.tistory.com |
+| 파일명 | 네이버 카테고리 | 티스토리 대상 |
+|--------|---------------|-------------|
+| 맛집-* | 먹은 것들 | steambell.tistory.com |
+| 본것들-* | 본 것들 | steambell.tistory.com |
+| 산것들-* | 산 것들 | steambell.tistory.com |
+| 차량관리-* | 굴리는 것들 | steambell.tistory.com |
+| 보컬레슨-* | 부르는 것들 | steambell.tistory.com |
+| 육아-* | 키우는 것들 | steambell.tistory.com |
