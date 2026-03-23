@@ -10,6 +10,11 @@ import apiRouter from "./routes/api.js";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const app = express();
+app.disable("x-powered-by");
+
+// HTML 캐시 (path → { html, createdAt })
+const CACHE_TTL = 60 * 60 * 1000; // 1시간
+const htmlCache = new Map<string, { html: string; createdAt: number }>();
 
 // DB 초기화
 initSchema();
@@ -30,15 +35,27 @@ const isProduction = process.env.NODE_ENV === "production" || existsSync(clientD
 if (isProduction && existsSync(clientDir)) {
   app.use(express.static(clientDir));
 
+  // index.html은 서버 시작 시 한 번만 읽기
+  const indexPath = resolve(clientDir, "index.html");
+  const baseHtml = existsSync(indexPath) ? readFileSync(indexPath, "utf-8") : null;
+
   // SPA fallback with SEO meta + noscript injection
   app.get("/{*splat}", (req, res) => {
-    const indexPath = resolve(clientDir, "index.html");
-    if (!existsSync(indexPath)) {
+    if (!baseHtml) {
       res.status(404).send("Not Found");
       return;
     }
 
-    let html = readFileSync(indexPath, "utf-8");
+    // 캐시 확인
+    const cacheKey = req.path;
+    const cached = htmlCache.get(cacheKey);
+    if (cached && Date.now() - cached.createdAt < CACHE_TTL) {
+      res.set("Content-Type", "text/html");
+      res.send(cached.html);
+      return;
+    }
+
+    let html = baseHtml;
     const siteUrl = process.env.SITE_URL || `https://${req.get("host")}`;
 
     // SEO 메타 태그 동적 주입
@@ -53,9 +70,10 @@ if (isProduction && existsSync(clientDir)) {
       `$1${escapeAttr(meta.ogTitle)}$2`,
     );
 
-    // canonical + og:description + JSON-LD 삽입
+    // canonical + og:url + og:description + JSON-LD 삽입
     const headInsert = [
       `<link rel="canonical" href="${meta.canonical}" />`,
+      `<meta property="og:url" content="${meta.canonical}" />`,
       `<meta property="og:description" content="${escapeAttr(meta.ogDescription)}" />`,
       `<script type="application/ld+json">${JSON.stringify(meta.jsonLd)}</script>`,
     ].join("\n");
@@ -66,6 +84,9 @@ if (isProduction && existsSync(clientDir)) {
     if (noscriptBlock) {
       html = html.replace("</body>", `${noscriptBlock}\n</body>`);
     }
+
+    // 캐시 저장
+    htmlCache.set(cacheKey, { html, createdAt: Date.now() });
 
     res.set("Content-Type", "text/html");
     res.send(html);
@@ -147,7 +168,7 @@ function buildBlogMeta(blogId: string, page: number, siteUrl: string): MetaInfo 
   const blog = getBlog(blogId);
   const blogName = blog?.name ?? blogId;
 
-  const posts = getPostList(blogId, page, 1);
+  const posts = getPostList(blogId, page, PAGE_SIZE);
   const firstTitle = posts.length > 0 ? posts[0].title.slice(0, 30) : "";
 
   let title = firstTitle
@@ -159,6 +180,13 @@ function buildBlogMeta(blogId: string, page: number, siteUrl: string): MetaInfo 
     ? posts[0].summary.slice(0, 160)
     : `${blogName}의 블로그 글 모아보기`;
   const canonical = page === 1 ? `${siteUrl}/blog/${blogId}` : `${siteUrl}/blog/${blogId}/${page}`;
+
+  const itemListElement = posts.map((p, i) => ({
+    "@type": "ListItem",
+    position: i + 1,
+    url: `https://m.blog.naver.com/${blogId}/${p.logNo}`,
+    name: p.title,
+  }));
 
   return {
     title,
@@ -172,6 +200,11 @@ function buildBlogMeta(blogId: string, page: number, siteUrl: string): MetaInfo 
       name: title,
       url: canonical,
       description,
+      mainEntity: {
+        "@type": "ItemList",
+        numberOfItems: itemListElement.length,
+        itemListElement,
+      },
     },
   };
 }
@@ -180,7 +213,7 @@ function buildCategoryMeta(blogId: string, category: string, page: number, siteU
   const blog = getBlog(blogId);
   const blogName = blog?.name ?? blogId;
 
-  const posts = getPostList(blogId, page, 1, category);
+  const posts = getPostList(blogId, page, CATEGORY_PAGE_SIZE, category);
   const firstTitle = posts.length > 0 ? posts[0].title.slice(0, 30) : "";
 
   let title = firstTitle
@@ -197,6 +230,13 @@ function buildCategoryMeta(blogId: string, category: string, page: number, siteU
     ? `${siteUrl}/blog/${blogId}/${encodedCat}`
     : `${siteUrl}/blog/${blogId}/${encodedCat}/${page}`;
 
+  const itemListElement = posts.map((p, i) => ({
+    "@type": "ListItem",
+    position: i + 1,
+    url: `https://m.blog.naver.com/${blogId}/${p.logNo}`,
+    name: p.title,
+  }));
+
   return {
     title,
     description,
@@ -209,6 +249,11 @@ function buildCategoryMeta(blogId: string, category: string, page: number, siteU
       name: title,
       url: canonical,
       description,
+      mainEntity: {
+        "@type": "ItemList",
+        numberOfItems: itemListElement.length,
+        itemListElement,
+      },
     },
   };
 }
